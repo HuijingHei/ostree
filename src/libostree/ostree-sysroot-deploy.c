@@ -1810,6 +1810,7 @@ install_deployment_kernel (OstreeSysroot *sysroot, int new_bootversion,
                            GCancellable *cancellable, GError **error)
 
 {
+  g_debug ("=======Installing kernel====");
   GLNX_AUTO_PREFIX_ERROR ("Installing kernel", error);
   OstreeBootconfigParser *bootconfig = ostree_deployment_get_bootconfig (deployment);
   g_autofree char *deployment_dirpath = ostree_sysroot_get_deployment_dirpath (sysroot, deployment);
@@ -1900,6 +1901,7 @@ install_deployment_kernel (OstreeSysroot *sysroot, int new_bootversion,
         }
       else
         {
+          g_debug ("=======debug====");
           if (!copy_dir_recurse (kernel_layout->boot_dfd, bootcsum_dfd,
                                  kernel_layout->devicetree_srcpath, sysroot->debug_flags,
                                  cancellable, error))
@@ -2394,6 +2396,7 @@ write_deployments_bootswap (OstreeSysroot *self, GPtrArray *new_deployments,
 
   for (guint i = 0; i < new_deployments->len; i++)
     {
+      g_debug ("===call install_deployment_kernel==");
       OstreeDeployment *deployment = new_deployments->pdata[i];
       if (!install_deployment_kernel (self, new_bootversion, deployment, new_deployments->len,
                                       show_osname, cancellable, error))
