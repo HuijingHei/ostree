@@ -306,6 +306,14 @@ copy_dir_recurse (int src_parent_dfd, int dest_parent_dfd, const char *name,
                                          copy_flags, cancellable, error))
     return glnx_prefix_error (error, "Copying attributes of %s", name);
 
+  {
+    g_autoptr (GVariant) xattrs = NULL;
+    if (!glnx_fd_get_all_xattrs (dest_parent_dfd, &xattrs, cancellable, error))
+      return FALSE;
+    if (!glnx_fd_set_all_xattrs (dest_dfd, xattrs, cancellable, error))
+      return FALSE;
+  }
+
   while (TRUE)
     {
       struct stat child_stbuf;
