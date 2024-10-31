@@ -306,6 +306,15 @@ copy_dir_recurse (int src_parent_dfd, int dest_parent_dfd, const char *name,
                                          copy_flags, cancellable, error))
     return glnx_prefix_error (error, "Copying attributes of %s", name);
 
+  {
+    g_debug ("=== set xattrs %s", name);
+    g_autoptr (GVariant) xattrs = NULL;
+    if (!glnx_fd_get_all_xattrs (dest_parent_dfd, &xattrs, cancellable, error))
+      return FALSE;
+    if (!glnx_fd_set_all_xattrs (dest_dfd, xattrs, cancellable, error))
+      return FALSE;
+  }
+
   while (TRUE)
     {
       struct stat child_stbuf;
@@ -328,6 +337,7 @@ copy_dir_recurse (int src_parent_dfd, int dest_parent_dfd, const char *name,
         {
           if (S_ISLNK (child_stbuf.st_mode) || S_ISREG (child_stbuf.st_mode))
             {
+              g_debug ("=== Copying %s", dent->d_name);
               if (!glnx_file_copy_at (src_dfd_iter.fd, dent->d_name, &child_stbuf, dest_dfd,
                                       dent->d_name, GLNX_FILE_COPY_OVERWRITE | copy_flags,
                                       cancellable, error))
@@ -1835,6 +1845,7 @@ install_deployment_kernel (OstreeSysroot *sysroot, int new_bootversion,
                            GCancellable *cancellable, GError **error)
 
 {
+  g_debug ("===call install_deployment_kernel: (n_deployments)%d===", n_deployments);
   GLNX_AUTO_PREFIX_ERROR ("Installing kernel", error);
   OstreeBootconfigParser *bootconfig = ostree_deployment_get_bootconfig (deployment);
   g_autofree char *deployment_dirpath = ostree_sysroot_get_deployment_dirpath (sysroot, deployment);
@@ -1860,6 +1871,8 @@ install_deployment_kernel (OstreeSysroot *sysroot, int new_bootversion,
   g_autofree char *bootcsumdir = g_strdup_printf ("ostree/%s-%s", osname, bootcsum);
   g_autofree char *bootconfdir = g_strdup_printf ("loader.%d/entries", new_bootversion);
   g_autofree char *bootconf_name = bootloader_entry_filename (sysroot, n_deployments, deployment);
+
+   g_debug ("===install_deployment_kernel: bootcsumdir: %s ===", bootcsumdir);
 
   if (!glnx_shutil_mkdir_p_at (sysroot->boot_fd, bootcsumdir, 0775, cancellable, error))
     return FALSE;
@@ -1925,6 +1938,7 @@ install_deployment_kernel (OstreeSysroot *sysroot, int new_bootversion,
         }
       else
         {
+          g_debug ("===call copy_dir_recurse===");
           // Don't copy xattrs for devicetree; Fedora derives label them modules_t which is
           // wrong for when they're installed, we want the default boot_t.
           if (!copy_dir_recurse (kernel_layout->boot_dfd, bootcsum_dfd,
