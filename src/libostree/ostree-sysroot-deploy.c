@@ -2393,6 +2393,11 @@ write_deployments_bootswap (OstreeSysroot *self, GPtrArray *new_deployments,
                             SyncStats *out_syncstats, char **out_subbootdir,
                             GCancellable *cancellable, GError **error)
 {
+  {
+    g_autofree char *msg
+        = g_strdup_printf ("==write deployments bootswap==");
+    _ostree_sysroot_emit_journal_msg (self, msg);
+  }
   const int new_bootversion = self->bootversion ? 0 : 1;
 
   g_autofree char *new_loader_entries_dir
@@ -2434,6 +2439,11 @@ write_deployments_bootswap (OstreeSysroot *self, GPtrArray *new_deployments,
   g_debug ("Using bootloader: %s",
            bootloader ? g_type_name (G_TYPE_FROM_INSTANCE (bootloader)) : "(none)");
 
+  {
+    g_autofree char *msg
+        = g_strdup_printf ("==get bootloader: '%s'==", g_type_name (G_TYPE_FROM_INSTANCE (bootloader)));
+    _ostree_sysroot_emit_journal_msg (self, msg);
+  }
   if (bootloader)
     {
       if (!_ostree_bootloader_write_config (bootloader, new_bootversion, new_deployments,
@@ -2444,9 +2454,19 @@ write_deployments_bootswap (OstreeSysroot *self, GPtrArray *new_deployments,
   if (!prepare_new_bootloader_link (self, self->bootversion, new_bootversion, cancellable, error))
     return FALSE;
 
+  {
+    g_autofree char *msg
+        = g_strdup_printf ("==full system sync start==");
+    _ostree_sysroot_emit_journal_msg (self, msg);
+  }
   if (!full_system_sync (self, out_syncstats, cancellable, error))
     return FALSE;
 
+  {
+    g_autofree char *msg
+        = g_strdup_printf ("==swap bootloader start==");
+    _ostree_sysroot_emit_journal_msg (self, msg);
+  }
   if (!swap_bootloader (self, bootloader, self->bootversion, new_bootversion, cancellable, error))
     return FALSE;
 
@@ -2588,6 +2608,11 @@ static gboolean
 auto_early_prune_old_deployments (OstreeSysroot *self, GPtrArray *new_deployments,
                                   GCancellable *cancellable, GError **error)
 {
+  {
+    g_autofree char *msg
+        = g_strdup_printf ("==auto early prune old deloyments==");
+    _ostree_sysroot_emit_journal_msg (self, msg);
+  }
   /* If we're not booted into a deployment, then this is some kind of e.g. disk
    * creation/provisioning. The situation isn't as dire, so let's not resort to
    * auto-pruning and instead let possible ENOSPC errors naturally bubble. */
@@ -2816,6 +2841,12 @@ ostree_sysroot_write_deployments_with_options (OstreeSysroot *self, GPtrArray *n
                                                OstreeSysrootWriteDeploymentsOpts *opts,
                                                GCancellable *cancellable, GError **error)
 {
+  {
+    g_autofree char *msg
+        = g_strdup_printf ("==start write deployment with options ==");
+    _ostree_sysroot_emit_journal_msg (self, msg);
+  }
+
   g_assert (self->loadstate == OSTREE_SYSROOT_LOAD_STATE_LOADED);
 
   if (!_ostree_sysroot_ensure_writable (self, error))
@@ -3463,6 +3494,11 @@ sysroot_finalize_deployment (OstreeSysroot *self, OstreeDeployment *deployment,
                              OstreeDeployment *merge_deployment, GCancellable *cancellable,
                              GError **error)
 {
+  {
+    g_autofree char *msg
+        = g_strdup_printf ("==Finalizing deployment starting==");
+    _ostree_sysroot_emit_journal_msg (self, msg);
+  }
   GLNX_AUTO_PREFIX_ERROR ("Finalizing deployment", error);
   g_autofree char *deployment_path = ostree_sysroot_get_deployment_dirpath (self, deployment);
   glnx_autofd int deployment_dfd = -1;
@@ -3953,6 +3989,11 @@ static gboolean
 _ostree_sysroot_finalize_staged_inner (OstreeSysroot *self, GCancellable *cancellable,
                                        GError **error)
 {
+  {
+    g_autofree char *msg
+        = g_strdup_printf ("==finalize staged inner starting==");
+    _ostree_sysroot_emit_journal_msg (self, msg);
+  }
   /* It's totally fine if there's no staged deployment; perhaps down the line
    * though we could teach the ostree cmdline to tell systemd to activate the
    * service when a staged deployment is created.
@@ -4029,7 +4070,11 @@ _ostree_sysroot_finalize_staged_inner (OstreeSysroot *self, GCancellable *cancel
                                     error))
     return FALSE;
   ot_journal_print (LOG_INFO, "Finalized deployment");
-
+  {
+    g_autofree char *msg
+        = g_strdup_printf ("==Finalized deployment finished==");
+    _ostree_sysroot_emit_journal_msg (self, msg);
+  }
   /* Now, take ownership of the staged state, as normally the API below strips
    * it out.
    */
@@ -4037,6 +4082,11 @@ _ostree_sysroot_finalize_staged_inner (OstreeSysroot *self, GCancellable *cancel
   staged->staged = FALSE;
   g_ptr_array_remove_index (self->deployments, 0);
 
+  {
+    g_autofree char *msg
+        = g_strdup_printf ("==simple write deployment start==");
+    _ostree_sysroot_emit_journal_msg (self, msg);
+  }
   /* TODO: Proxy across flags too?
    *
    * But note that we always use NO_CLEAN to avoid adding more latency at
@@ -4066,6 +4116,11 @@ _ostree_sysroot_finalize_staged_inner (OstreeSysroot *self, GCancellable *cancel
 gboolean
 _ostree_sysroot_finalize_staged (OstreeSysroot *self, GCancellable *cancellable, GError **error)
 {
+  {
+    g_autofree char *msg
+        = g_strdup_printf ("==_finalize staged starting==");
+    _ostree_sysroot_emit_journal_msg (self, msg);
+  }
   g_autoptr (GError) finalization_error = NULL;
   if (!_ostree_sysroot_ensure_boot_fd (self, error))
     return FALSE;
